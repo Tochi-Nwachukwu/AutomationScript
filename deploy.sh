@@ -23,8 +23,8 @@ echo "🐍 Installing Python and pip..."
 sudo apt-get install -y python3 python3-pip python3-venv
 
 echo "💻 Setting up virtual environment..."
-python3 -m venv venv
-source venv/bin/activate
+sudo python3 -m venv venv
+sudo source venv/bin/activate
 
 echo "📦 Installing dependencies..."
 pip install --upgrade pip
