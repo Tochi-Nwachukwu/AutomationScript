@@ -32,5 +32,6 @@ echo "📦 Installing dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt || pip install flask
 
-echo "🚀 Starting Flask app..."
-FLASK_APP=app.py FLASK_ENV=production flask run --host=0.0.0.0 --port=5000
+echo "🚀 Starting Flask app in background..."
+nohup flask run --host=0.0.0.0 --port=5000 > flask.log 2>&1 &
+echo "✅ Flask app started in background. Logs: flask.log"
