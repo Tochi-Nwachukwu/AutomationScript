@@ -1,61 +1,34 @@
 #!/bin/bash
 
-echo "deleting old app"
-sudo rm -rf /var/www/
+set -e
 
-echo "creating app folder"
-sudo mkdir -p /var/www/python-app 
+APP_DIR="/var/www/python-app"
 
-echo "moving files to app folder"
-sudo mv  * /var/www/python-app
+echo "🧹 Deleting old app (if exists)..."
+sudo rm -rf "$APP_DIR"
 
-# Navigate to the app directory
-cd /var/www/python-app/
+echo "📁 Creating app folder..."
+sudo mkdir -p "$APP_DIR"
+
+echo "📦 Moving files to app folder..."
+sudo mv * "$APP_DIR"
+
+cd "$APP_DIR"
 sudo mv env .env
 
+echo "🔄 Updating package list..."
 sudo apt-get update
-echo "installing python and pip"
-sudo apt-get install -y python3 python3-pip
 
-# Install application dependencies from requirements.txt
-echo "Install application dependencies from requirements.txt"
-sudo pip install -r requirements.txt
+echo "🐍 Installing Python and pip..."
+sudo apt-get install -y python3 python3-pip python3-venv
 
-# Update and install Nginx if not already installed
-if ! command -v nginx > /dev/null; then
-    echo "Installing Nginx"
-    sudo apt-get update
-    sudo apt-get install -y nginx
-fi
+echo "💻 Setting up virtual environment..."
+python3 -m venv venv
+source venv/bin/activate
 
-# Configure Nginx to act as a reverse proxy if not already configured
-if [ ! -f /etc/nginx/sites-available/pythonapp ]; then
-    sudo rm -f /etc/nginx/sites-enabled/default
-    sudo bash -c 'cat > /etc/nginx/sites-available/pythonapp <<EOF
-server {
-    listen 80;
-    server_name _;
+echo "📦 Installing dependencies..."
+pip install --upgrade pip
+pip install -r requirements.txt || pip install flask
 
-    location / {
-        include proxy_params;
-        proxy_pass http://unix:/var/www/python-app/pythonapp.sock;
-    }
-}
-EOF'
-
-    sudo ln -s /etc/nginx/sites-available/pythonapp /etc/nginx/sites-enabled
-    sudo systemctl restart nginx
-else
-    echo "Nginx reverse proxy configuration already exists."
-fi
-
-# Stop any existing Gunicorn process
-sudo pkill gunicorn
-sudo rm -rf pythonapp.sock
-
-# # Start Gunicorn with the Flask application
-# # Replace 'server:app' with 'yourfile:app' if your Flask instance is named differently.
-# # gunicorn --workers 3 --bind 0.0.0.0:8000 server:app &
-echo "starting gunicorn"
-sudo gunicorn --workers 3 --bind unix:pythonapp.sock  server:app --user www-data --group www-data --daemon
-echo "started gunicorn 🚀"
+echo "🚀 Starting Flask app..."
+FLASK_APP=app.py FLASK_ENV=production flask run --host=0.0.0.0 --port=5000
